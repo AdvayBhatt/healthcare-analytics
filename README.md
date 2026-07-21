@@ -46,6 +46,40 @@ Do providers in FACILITY settings receive systematically different payments than
 **Q4: Utilization patterns by rural/urban status**
 Do rural providers serve fewer beneficiaries per service type, and are certain procedures systematically underutilized in rural areas relative to urban ones?
 
+Hypotheses
+
+Q1: Payment efficiency by geography
+
+H_0: `payment_ratio` does not vary significantly by state
+H_1: `payment_ratio` varies significantly between at least two states
+
+
+Q2: Cost drivers
+
+Overall model (F-test): H_0: all regression coefficients = 0 (the model explains no variance in Avg_Mdcr_Pymt_Amt) vs. H₁: at least one coefficient ≠ 0
+Per-predictor (t-tests): for each predictor, H_0: \beta = 0 (no effect, holding other predictors fixed) vs. H_1: \beta ≠ 0
+
+Q3: Facility vs. non-facility payment differences
+
+H_0: providers in facility settings do not receive systematically different payments than office settings for the same procedure
+H_1: providers in facility settings receive systematically different payments than office settings for the same procedure
+
+
+Q4a: Beneficiaries served, rural vs. urban
+
+H_0: rural providers serve the same number of beneficiaries per service type as urban providers
+H_1: rural providers serve fewer beneficiaries per service type than urban providers
+One-sided, right-tailed test on (urban rate - rural rate)
+
+
+Q4b: Procedure-level underutilization, rural vs. urban
+Tested independently for each procedure code, using services-per-beneficiary rate ratios:
+
+H_{0p}: the rural utilization rate for procedure p is not lower than the urban rate
+H_{1p}: the rural utilization rate for procedure p is lower than the urban rate
+
+Because this involves one hypothesis test per procedure code so dozens to hundreds of simultaneous tests, raw p-values are corrected for multiple comparisons using the Benjamini-Hochberg (FDR) procedure before any procedure is flagged as significantly underutilized. This controls the expected proportion of false positives among flagged procedures, rather than relying on an uncorrected 0.05 threshold that would produce misleading results at this scale.
+
 ## Methodology
 Each question is answered with some statistical methods like EDA with distributional analysis, formally stated hypotheses, model fitting, assumption checking, and effect size interpretation alongside statistical significance.
 
