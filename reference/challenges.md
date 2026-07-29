@@ -1,37 +1,86 @@
 # Analysis Challenges
 
-## Q1: Geographic Variation in Medicare Payments
+## Q1: Geographic Variation in Medicare Payment Ratios
 
-- Challenge: Determining the appropriate payment metric required distinguishing between aggregate payment ratios and provider-level payment behavior.
-- Resolution: Compared provider-level ratios because averaging ratios answers a different question than calculating total payments divided by total charges.
+### Defining the Correct Metric
+- Challenge:
+  Determining whether to calculate payment ratio using aggregated state totals or average provider-level ratios.
 
-- Challenge: Large differences between states could be driven by a small number of extreme observations.
-- Resolution: Investigated outlier states and performed sensitivity analysis after excluding problematic categories.
+- Resolution:
+  Used the average of row-level payment ratios because the research question focused on differences between typical provider-service observations.
 
-- Challenge: Statistical significance alone did not indicate whether differences were meaningful.
-- Resolution: Added effect-size analysis using η² and pairwise comparisons.
+### Statistical vs Practical Significance
+- Challenge:
+  Millions of observations caused even small state differences to become statistically significant.
+
+- Resolution:
+  Added η² effect size analysis and practical thresholds for pairwise differences.
+
+### Outlier States
+- Challenge:
+  Alaska and Wisconsin produced disproportionate Tukey HSD differences.
+
+- Resolution:
+  Performed sensitivity analysis excluding these states and compared the resulting ANOVA effect size.
 
 ## Q2: Drivers of Medicare Payment Variation
 
-- Challenge: Healthcare payment data contained extreme skew and large variation across providers.
-- Resolution: Applied log transformation to Medicare payments to improve model stability and make coefficients easier to interpret.
+### Highly Skewed Payment Distribution
+- Challenge:
+  Medicare payment amounts contained extreme right skew.
 
-- Challenge: High-cardinality categorical variables created many regression coefficients.
-- Resolution: Grouped smaller categories and evaluated whether categories contained enough observations.
+- Resolution:
+  Applied log transformation to stabilize variance and improve interpretability.
 
-- Challenge: Large sample size caused many predictors to become statistically significant.
-- Resolution: Focused interpretation on coefficient magnitude and practical impact rather than p-values alone.
+### High Cardinality Categories
+- Challenge:
+  Provider specialties and HCPCS codes contained many categories, including rare groups.
 
-- Challenge: Initial model diagnostics indicated potential scaling/multicollinearity concerns.
-- Resolution: Investigated predictors and confirmed whether issues were caused by variable scale or actual correlation problems.
+- Resolution:
+  Grouped low-frequency categories into "Other" categories to improve model stability.
+
+### CPT Categorization
+- Challenge:
+  HCPCS codes included both numeric CPT-style codes and alphabetic HCPCS codes.
+
+- Resolution:
+  Created separate classification logic:
+  - Numeric CPT ranges
+  - Alphabetic HCPCS prefixes
+
+### Model Diagnostics
+- Challenge:
+  The regression condition number suggested possible numerical instability.
+
+- Resolution:
+  Standardized beneficiary volume variables and confirmed that scaling, rather than severe multicollinearity, was driving the issue.
 
 ## Q3: Facility vs Non-Facility Payment Differences
 
-- Challenge: Testing hundreds of HCPCS codes increased the probability of false discoveries.
-- Resolution: Applied Benjamini-Hochberg FDR correction before identifying significant procedures.
+### Paired Comparison Design
+- Challenge:
+  Comparing facility and office payments directly could confound differences between providers.
 
-- Challenge: Several procedures were statistically significant but had very small payment differences.
-- Resolution: Converted log differences into percentage differences and introduced a practical significance threshold.
+- Resolution:
+  Matched comparisons by provider NPI and HCPCS procedure so each comparison represented the same provider performing the same service in different settings.
 
-- Challenge: Large differences required determining whether they represented meaningful patterns or data issues.
-- Resolution: Investigated high-impact codes and identified cataract procedures (66984 and 66982) as notable examples requiring interpretation.
+### Multiple Comparisons
+- Challenge:
+  Testing hundreds of HCPCS codes increased the chance of false positives.
+
+- Resolution:
+  Applied Benjamini-Hochberg FDR correction.
+
+### Statistical Significance vs Business Relevance
+- Challenge:
+  Large sample sizes caused some small payment differences to become statistically significant.
+
+- Resolution:
+  Added a practical significance threshold of 5% payment difference after converting log differences back into percentage changes.
+
+### Interpreting Large Differences
+- Challenge:
+  Some procedures showed extremely large facility-office differences.
+
+- Resolution:
+  Investigated the largest differences and identified cataract procedures (66984 and 66982) as major outliers requiring contextual interpretation.
