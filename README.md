@@ -35,13 +35,15 @@ The fraction of billed charges Medicare actually pays. Used throughout as the cl
 ## Research Questions
 
 **Q1: Payment efficiency by geography**
-Does `payment_ratio` vary significantly by state after controlling for procedure type? ANOVA and post-hoc tests, visualized with a choropleth map for the US states.
+Does the typical provider-service payment ratio vary significantly by state? ANOVA and post-hoc tests, visualized with a choropleth map for the US states.
 
 **Q2: Cost drivers**
 What predicts `Avg_Mdcr_Pymt_Amt`? Multiple regression using specialty, state, rural/urban classification, place of service, and volume as predictors, with inference like confidence intervals, F-test, residual diagnostics, and so on.
 
 **Q3: Facility vs. non-facility payment differences**
-Do providers in FACILITY settings receive systematically different payments than OFFICE settings for the SAME procedure? Two-sample tests are used like t-test / Wilcoxon with effect sizes.
+Do providers receive systematically different payments in FACILITY vs. OFFICE settings for the same provider-procedure combination?
+
+A paired analysis is performed by matching the same provider (NPI) and HCPCS procedure across facility and office settings. Wilcoxon signed-rank tests are used because payment differences are paired and not assumed to be normally distributed. Significant procedures are corrected using Benjamini-Hochberg FDR and filtered using a practical effect-size threshold.
 
 **Q4: Utilization patterns by rural/urban status**
 Do rural providers serve fewer beneficiaries per service type, and are certain procedures systematically underutilized in rural areas relative to urban ones?
@@ -91,7 +93,7 @@ A one-way ANOVA found a statistically significant difference in mean payment_rat
 
 Q2: Cost drivers
 
-Multiple regression on a log-transformed version of `Avg_Mdcr_Pymt_Amt` to address strong skewness towards the right, since OLS assumes ~normally distributed residuals. This was built up in stages to isolate what actually explains payment amount. A baseline model with state, top 40 specialties, place of service, rural/urban status, and patient volume explained only 14.5% of variance by adjusted R². Adding a procedure-type predictor in the CPT/HCPCS codes grouped into the categories Anesthesia, Surgery, Radiology, Pathology/Lab, Medicine, E/M, Drugs, etc., derived from official CPT numeric ranges and HCPCS Level II letter prefixes then raised adjusted R² to 43.6%, showing me that procedure type is by far the strongest driver of payment amount among the predictors considered. All predictors were statistically significant at p < .001 given the sample size of ~9.76M rows.
+Multiple regression on a log-transformed version of `Avg_Mdcr_Pymt_Amt` to reduce the impact of extreme right-skewed payment values and improve residual behavior. The log transformation also allows coefficients to be interpreted as multiplicative payment differences. This was built up in stages to isolate what actually explains payment amount. A baseline model with state, top 40 specialties, place of service, rural/urban status, and patient volume explained only 14.5% of variance by adjusted R². Adding a procedure-type predictor in the CPT/HCPCS codes grouped into the categories Anesthesia, Surgery, Radiology, Pathology/Lab, Medicine, E/M, Drugs, etc., derived from official CPT numeric ranges and HCPCS Level II letter prefixes then raised adjusted R² to 43.6%, showing me that procedure type is by far the strongest driver of payment amount among the predictors considered. All predictors were statistically significant at p < .001 given the sample size of ~9.76M rows.
 
 Holding procedure type, specialty, state, place of service, and volume constant, rural providers are associated with roughly a 5.4% lower average payment than urban providers which is interesting because the gap was around 10% before procedure mix was controlled for. That shows me part of the raw rural/urban payment gap reflects a difference in what procedures are performed rather than the rural/urban payment for the same procedure.
 
@@ -99,6 +101,18 @@ In addition, here are some diagnostics of note:
 (1) a handful of procedure categories that were almost empty like DME, Orthotics/Prosthetics initially destabilized coefficient estimates and inflated the model's condition number roughly 20x. However, collapsing them into an "Other" bucket resolved this with no important loss in adjusted R². 
 
 (2) the model's remaining moderate condition number turned out to be a pure scale artifact from `Tot_Benes` or patient volume, ranging into the thousands sitting alongside 0/1 dummy variables, not genuine multicollinearity between predictors. Then, standardizing Tot_Benes using z-scores dropped the condition number from ~1.95e+05 to 198 with no change to any other coefficient, R², or significance level, confirming the model was numerically stable all along.
+
+Q3: Facility vs. non-facility payment differences (DONE)
+
+A paired provider-procedure analysis was conducted to compare facility and office Medicare payments for the same HCPCS procedure performed by the same rendering provider. After filtering to procedures with sufficient paired observations, Wilcoxon signed-rank tests were performed and corrected using Benjamini-Hochberg false discovery rate adjustment.
+
+Statistical significance alone identified several procedures with small payment differences, so median log-payment differences were converted back into percentage differences using exp(median_diff)-1. A practical significance threshold of 5% was selected based on the observed distribution of significant effects.
+
+Seven procedures exceeded the practical significance threshold. The largest differences were observed for cataract procedures:
+- HCPCS 66984: approximately 10.5x higher facility payment (+950%)
+- HCPCS 66982: approximately 4.8x higher facility payment (+376%)
+
+Other significant procedures showed smaller but still meaningful differences ranging from approximately 5-17%. The procedures spanned multiple specialties including ophthalmology, anesthesia, cardiology, and anticoagulation management rather than clustering into a single specialty.
 
 ## Limitations
 This dataset reflects paid claims outcomes, not claims processing timelines. It cannot measure time-to-payment, denial-to-resubmission cycles, or true revenue cycle bottlenecks because understand those require proprietary claims processing timestamp data. `payment_ratio` and related metrics are proxies for payment efficiency and billing consistency, not direct measures of processing friction. This limitation is documented, again, in `reference/assumptions.md`
@@ -130,4 +144,12 @@ healthcare-analytics/
 Python, pandas, statsmodels, Plotly (choropleth mapping), Streamlit
 
 ## Status
-In progress: EDA underway.
+Completed:
+- Q1: Geographic payment ratio variation
+- Q2: Medicare payment cost driver regression
+- Q3: Facility vs. non-facility procedure payment analysis
+
+In progress:
+- Q4: Rural/urban utilization analysis
+- Streamlit dashboard deployment
+- Final documentation and reproducibility improvements
