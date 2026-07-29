@@ -85,9 +85,20 @@ Each question is answered with some statistical methods like EDA with distributi
 
 ## Findings
 
-Q1 — Payment efficiency by geography (DONE)
+Q1: Payment efficiency by geography (DONE)
 
 A one-way ANOVA found a statistically significant difference in mean payment_ratio across states (p < .001), but state explains only a small share of total variation (η² ≈ 1.3%) meaning that most of the spread in `payment_ratio` comes from claim-to-claim variation within states, not from which state a claim was filed in. Post-hoc Tukey HSD testing (filtered to pairs with a practically meaningful gap, |meandiff| > 0.10) showed that the large majority of those meaningful pairwise differences trace back to two extreme states in Alaska (highest) and Wisconsin (lowest) rather than being broadly distributed across all states. Re-running the ANOVA with AK and WI excluded dropped η² from ~1.3% to ~0.9%, confirming these two states account for a disproportionate but not dominant share of the already small state-level effect. Visualized as a state-level choropleth (outputs/figures/).
+
+Q2: Cost drivers
+
+Multiple regression on a log-transformed version of `Avg_Mdcr_Pymt_Amt` to address strong skewness towards the right, since OLS assumes ~normally distributed residuals. This was built up in stages to isolate what actually explains payment amount. A baseline model with state, top 40 specialties, place of service, rural/urban status, and patient volume explained only 14.5% of variance by adjusted R². Adding a procedure-type predictor in the CPT/HCPCS codes grouped into the categories Anesthesia, Surgery, Radiology, Pathology/Lab, Medicine, E/M, Drugs, etc., derived from official CPT numeric ranges and HCPCS Level II letter prefixes then raised adjusted R² to 43.6%, showing me that procedure type is by far the strongest driver of payment amount among the predictors considered. All predictors were statistically significant at p < .001 given the sample size of ~9.76M rows.
+
+Holding procedure type, specialty, state, place of service, and volume constant, rural providers are associated with roughly a 5.4% lower average payment than urban providers which is interesting because the gap was around 10% before procedure mix was controlled for. That shows me part of the raw rural/urban payment gap reflects a difference in what procedures are performed rather than the rural/urban payment for the same procedure.
+
+In addition, here are some diagnostics of note:
+(1) a handful of procedure categories that were almost empty like DME, Orthotics/Prosthetics initially destabilized coefficient estimates and inflated the model's condition number roughly 20x. However, collapsing them into an "Other" bucket resolved this with no important loss in adjusted R². 
+
+(2) the model's remaining moderate condition number turned out to be a pure scale artifact from `Tot_Benes` or patient volume, ranging into the thousands sitting alongside 0/1 dummy variables, not genuine multicollinearity between predictors. Then, standardizing Tot_Benes using z-scores dropped the condition number from ~1.95e+05 to 198 with no change to any other coefficient, R², or significance level, confirming the model was numerically stable all along.
 
 ## Limitations
 This dataset reflects paid claims outcomes, not claims processing timelines. It cannot measure time-to-payment, denial-to-resubmission cycles, or true revenue cycle bottlenecks because understand those require proprietary claims processing timestamp data. `payment_ratio` and related metrics are proxies for payment efficiency and billing consistency, not direct measures of processing friction. This limitation is documented, again, in `reference/assumptions.md`
