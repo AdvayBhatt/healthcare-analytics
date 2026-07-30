@@ -91,3 +91,32 @@ Included:
 
 - Defined practical significance as a >=5% payment difference.
 - Selected the threshold after observing the distribution of FDR-significant results, where differences below 5% represented small statistical effects while larger differences represented potentially meaningful reimbursement gaps.
+
+# Dashboard and Reporting Assumptions
+
+## Dashboard Architecture
+
+- The Streamlit dashboard does not directly process raw CMS claims data.
+- Analytical transformations and statistical tests are performed in the analysis notebook.
+- The dashboard consumes processed summary tables exported from the analysis pipeline.
+
+### Output Tables
+
+The dashboard depends on the following generated files:
+
+- q1_state_summary.csv
+  - State-level payment ratio summaries used for geographic visualization.
+
+- q2_regression_results.csv
+  - Regression coefficients, confidence intervals, and p-values used for model interpretation.
+
+- q3_all_tested_procedures.csv
+  - Complete HCPCS testing results used to report the statistical testing funnel.
+
+- q3_facility_differences.csv
+  - Filtered procedures meeting practical significance thresholds used for visualization.
+
+### Reproducibility
+
+- Raw CMS data is not included due to file size limitations.
+- The notebook contains the transformation and modeling workflow required to regenerate dashboard outputs.
