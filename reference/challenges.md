@@ -84,3 +84,11 @@
 
 - Resolution:
   Investigated the largest differences and identified cataract procedures (66984 and 66982) as major outliers requiring contextual interpretation.
+
+  ### HCPCS Code Formatting
+
+- Challenge:
+  HCPCS codes contain both numeric and alphanumeric identifiers, and numeric-only codes with leading zeros can lose formatting during CSV export/import.
+
+- Resolution:
+  Preserved HCPCS codes as strings throughout dashboard ingestion to maintain identifier formatting.
