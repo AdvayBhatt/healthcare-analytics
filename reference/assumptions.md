@@ -120,3 +120,30 @@ The dashboard depends on the following generated files:
 
 - Raw CMS data is not included due to file size limitations.
 - The notebook contains the transformation and modeling workflow required to regenerate dashboard outputs.
+
+## Q4: Rural vs Urban Utilization Differences
+
+### Utilization Metric Definition
+- Compared rural and urban utilization using services-per-beneficiary rates:
+
+  Tot_Srvcs / Tot_Benes
+
+- This metric was used to normalize service volume by beneficiary population because raw service counts would primarily reflect differences in provider volume and population size.
+
+### Overall Rural-Urban Comparison (Q4a)
+- Tested whether aggregate utilization rates differed between rural and urban providers.
+- Used a one-sided Mann-Whitney U test because the hypothesis specifically tested whether rural utilization was lower than urban utilization.
+
+### Procedure-Level Analysis (Q4b)
+- Tested each HCPCS procedure code independently to identify services with potentially larger rural-urban utilization gaps.
+- Required sufficient observations per procedure to reduce instability from extremely rare services.
+- Applied Benjamini-Hochberg false discovery rate correction because hundreds of simultaneous procedure-level tests were performed.
+
+### Practical Significance
+- Statistical significance alone was not considered sufficient because large datasets can detect very small differences.
+- Procedures were only classified as practically significant when rural utilization was at least 5% lower than urban utilization.
+
+### Interpretation Limitations
+- Lower rural utilization does not necessarily indicate lack of access or unmet medical need.
+- This analysis measures observed paid service utilization, not disease prevalence, patient preferences, referral patterns, or availability of specialists.
+- The findings should be interpreted as identifying areas where rural-urban utilization differences exist, not proving causal barriers to care.
