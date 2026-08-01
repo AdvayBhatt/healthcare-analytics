@@ -1,10 +1,31 @@
 # Healthcare Analytics: Medicare Claims Payment & Utilization Analysis
 
+A statistical analysis of 9.76 million CMS Medicare Physician & Other Practitioners claims records exploring what drives Medicare payments, how reimbursement varies geographically, and where rural-urban utilization gaps appear across healthcare services.
+
+**Live Dashboard:** [Streamlit Dashboard Link Here]
+
+![Dashboard Preview](outputs/figures/dashboard_preview.png)
+
 ## Overview
-A statistical analysis of CMS Medicare Physician & Other Practitioners claims data, examining payment efficiency, geographic variation in reimbursement, cost drivers, and utilization patterns across provider specialties and regions. This project is motivated by my experience in healthcare revenue cycle and risk adjustment analytics gained through two summers interning at Optum Insight.
+
+This project analyzes CMS Medicare claims data at the provider × HCPCS procedure × place-of-service level to investigate four questions:
+
+1. How much does Medicare payment efficiency vary across states?
+2. Which factors most strongly explain Medicare payment amounts?
+3. Do facility and office settings receive different payments for identical procedures?
+4. Are specific healthcare services utilized less frequently by rural providers compared with urban providers?
+
+The analysis combines exploratory data analysis, statistical hypothesis testing, regression modeling, multiple-comparison correction, effect-size analysis, and interactive visualization.
+
+The main findings include:
+
+- Geographic differences in payment efficiency exist, but state explains only a small proportion of overall variation (**η² ≈ 1.3%**).
+- Procedure type is the strongest predictor of Medicare payment amount, increasing model explanatory power from **14.5% to 43.6% adjusted R²** after adding CPT/HCPCS categories.
+- Facility vs. office payment differences are concentrated in a small number of procedures, with cataract procedures showing the largest gaps.
+- Rural-urban utilization differences are generally small overall (~**-1.8%**), but procedure-level analysis identified **127 HCPCS codes with statistically significant and practically meaningful lower rural service rates**, including concentrations in oncology, radiation, and infusion-related services.
 
 ## Motivation
-Working inside a payer organization's revenue cycle quickly led me to ask where friction enters the path from a submitted claim to a paid claim, and how much of that friction is visible in public data. CMS's public data doesn't show when the claim processing actually occurs as a timestamp, so this project uses the closest available proxy in the relationship between what providers bill, what Medicare allows, and what Medicare actually pays to study payment efficiency, not processing time. That distinction is stated here throughout this repo (see `reference/assumptions.md`).
+My experience working in healthcare revenue cycle analytics motivated this project by raising questions about where variation enters the path from submitted claims to paid claims. CMS's public data doesn't show when the claim processing actually occurs as a timestamp, so this project uses the closest available proxy in the relationship between what providers bill, what Medicare allows, and what Medicare actually pays to study payment efficiency, not processing time. That distinction is stated here throughout this repo (see `reference/assumptions.md`).
 
 ## Data Source
 - **Dataset:** CMS Medicare Physician & Other Practitioners by Provider and Service
@@ -83,17 +104,17 @@ H_{1p}: the rural utilization rate for procedure p is lower than the urban rate
 Because this involves one hypothesis test per procedure code so dozens to hundreds of simultaneous tests, raw p-values are corrected for multiple comparisons using the Benjamini-Hochberg (FDR) procedure before any procedure is flagged as significantly underutilized. This controls the expected proportion of false positives among flagged procedures, rather than relying on an uncorrected 0.05 threshold that would produce misleading results at this scale.
 
 ## Methodology
-Each question is answered with some statistical methods like EDA with distributional analysis, formally stated hypotheses, model fitting, assumption checking, and effect size interpretation alongside statistical significance.
+Each question is addressed using exploratory data analysis, formal hypothesis testing, statistical modeling, assumption checks, multiple-comparison correction, and effect-size interpretation alongside statistical significance.
 
 ## Findings
 
-Q1: Payment efficiency by geography (DONE)
+### Q1: Payment efficiency by geography (DONE)
 
 A one-way ANOVA found a statistically significant difference in mean payment_ratio across states (p < .001), but state explains only a small share of total variation (η² ≈ 1.3%) meaning that most of the spread in `payment_ratio` comes from claim-to-claim variation within states, not from which state a claim was filed in. Post-hoc Tukey HSD testing (filtered to pairs with a practically meaningful gap, |meandiff| > 0.10) showed that the large majority of those meaningful pairwise differences trace back to two extreme states in Alaska (highest) and Wisconsin (lowest) rather than being broadly distributed across all states. Re-running the ANOVA with AK and WI excluded dropped η² from ~1.3% to ~0.9%, confirming these two states account for a disproportionate but not dominant share of the already small state-level effect. Visualized as a state-level choropleth (outputs/figures/).
 
-Q2: Cost drivers
+### Q2: Cost drivers
 
-Multiple regression on a log-transformed version of `Avg_Mdcr_Pymt_Amt` to reduce the impact of extreme right-skewed payment values and improve residual behavior. The log transformation also allows coefficients to be interpreted as multiplicative payment differences. This was built up in stages to isolate what actually explains payment amount. A baseline model with state, top 40 specialties, place of service, rural/urban status, and patient volume explained only 14.5% of variance by adjusted R². Adding a procedure-type predictor in the CPT/HCPCS codes grouped into the categories Anesthesia, Surgery, Radiology, Pathology/Lab, Medicine, E/M, Drugs, etc., derived from official CPT numeric ranges and HCPCS Level II letter prefixes then raised adjusted R² to 43.6%, showing me that procedure type is by far the strongest driver of payment amount among the predictors considered. All predictors were statistically significant at p < .001 given the sample size of ~9.76M rows.
+Multiple regression on a log-transformed version of `Avg_Mdcr_Pymt_Amt` to reduce the impact of extreme right-skewed payment values and improve residual behavior. The log transformation also allows coefficients to be interpreted as multiplicative payment differences. This was built up in stages to isolate what actually explains payment amount. A baseline model with state, top 40 specialties, place of service, rural/urban status, and patient volume explained only 14.5% of variance by adjusted R². Adding a procedure-type predictor in the CPT/HCPCS codes grouped into the categories Anesthesia, Surgery, Radiology, Pathology/Lab, Medicine, E/M, Drugs, etc., derived from official CPT numeric ranges and HCPCS Level II letter prefixes then raised adjusted R² to 43.6%, demonstrating that procedure type was the strongest predictor of payment amount among evaluated variables. All predictors were statistically significant at p < .001 given the sample size of ~9.76M rows.
 
 Holding procedure type, specialty, state, place of service, and volume constant, rural providers are associated with roughly a 5.4% lower average payment than urban providers which is interesting because the gap was around 10% before procedure mix was controlled for. That shows me part of the raw rural/urban payment gap reflects a difference in what procedures are performed rather than the rural/urban payment for the same procedure.
 
@@ -102,7 +123,7 @@ In addition, here are some diagnostics of note:
 
 (2) the model's remaining moderate condition number turned out to be a pure scale artifact from `Tot_Benes` or patient volume, ranging into the thousands sitting alongside 0/1 dummy variables, not genuine multicollinearity between predictors. Then, standardizing Tot_Benes using z-scores dropped the condition number from ~1.95e+05 to 198 with no change to any other coefficient, R², or significance level, confirming the model was numerically stable all along.
 
-Q3: Facility vs. non-facility payment differences (DONE)
+### Q3: Facility vs. non-facility payment differences (DONE)
 
 A paired provider-procedure analysis was conducted to compare facility and office Medicare payments for the same HCPCS procedure performed by the same rendering provider. After filtering to procedures with sufficient paired observations, Wilcoxon signed-rank tests were performed and corrected using Benjamini-Hochberg false discovery rate adjustment.
 
@@ -113,6 +134,33 @@ Seven procedures exceeded the practical significance threshold. The largest diff
 - HCPCS 66982: approximately 4.8x higher facility payment (+376%)
 
 Other significant procedures showed smaller but still meaningful differences ranging from approximately 5-17%. The procedures spanned multiple specialties including ophthalmology, anesthesia, cardiology, and anticoagulation management rather than clustering into a single specialty.
+
+### Q4: Rural vs. urban utilization differences (DONE)
+
+#### Q4a: Overall rural-urban utilization gap
+
+An aggregate comparison of service utilization rates found a statistically significant but relatively small difference between rural and urban providers. Rural providers served approximately **1.8% fewer beneficiaries per service type** than urban providers overall.
+
+This suggests that rural-urban utilization differences are not large when averaged across all healthcare services. However, an aggregate metric can hide substantial variation in specific procedures, which motivated a procedure-level analysis.
+
+#### Q4b: Procedure-level rural underutilization patterns
+
+To identify whether specific healthcare services showed larger rural-urban gaps, each HCPCS procedure code was tested independently using services-per-beneficiary utilization rates. Because 1,497 procedures were tested simultaneously, p-values were corrected using the **Benjamini-Hochberg false discovery rate (FDR)** procedure to control false positives.
+
+Among the tested procedures:
+- **289 HCPCS codes** showed statistically significant rural-urban differences after FDR correction.
+- **127 HCPCS codes** remained after applying a practical significance threshold requiring rural utilization to be at least **5% lower** than urban utilization.
+
+The largest differences were concentrated in specialized services, particularly:
+- oncology-related procedures,
+- radiation therapy,
+- chemotherapy administration,
+- infusion services,
+- injectable specialty medications.
+
+Approximately **37% of practically significant procedures** were identified as oncology/infusion-related based on HCPCS description classification. However, meaningful gaps were also observed across laboratory, imaging, and other procedure categories.
+
+These findings suggest that rural-urban utilization differences are not a uniform reduction across all healthcare services, but instead are concentrated in specific areas of specialized care where access, availability of specialists, and treatment infrastructure may play a larger role.
 
 ## Limitations
 This dataset reflects paid claims outcomes, not claims processing timelines. It cannot measure time-to-payment, denial-to-resubmission cycles, or true revenue cycle bottlenecks because understand those require proprietary claims processing timestamp data. `payment_ratio` and related metrics are proxies for payment efficiency and billing consistency, not direct measures of processing friction. This limitation is documented, again, in `reference/assumptions.md`
@@ -148,8 +196,9 @@ Completed:
 - Q1: Geographic payment ratio variation
 - Q2: Medicare payment cost driver regression
 - Q3: Facility vs. non-facility procedure payment analysis
-
-In progress:
 - Q4: Rural/urban utilization analysis
-- Streamlit dashboard deployment
-- Final documentation and reproducibility improvements
+- Streamlit dashboard development
+
+Remaining:
+- Public deployment
+- Final documentation cleanup
