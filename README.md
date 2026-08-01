@@ -2,7 +2,7 @@
 
 A statistical analysis of 9.76 million CMS Medicare Physician & Other Practitioners claims records exploring what drives Medicare payments, how reimbursement varies geographically, and where rural-urban utilization gaps appear across healthcare services.
 
-**Live Dashboard:** [Streamlit Dashboard Link Here]
+**Live Dashboard:** [[Streamlit Dashboard Link Here](https://healthcare-analytics-wbvyzjrihy6iplk4jzgemt.streamlit.app/)]
 
 ![Dashboard Preview](outputs/figures/dashboard_preview.png)
 
