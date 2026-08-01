@@ -12,8 +12,6 @@ st.set_page_config(
 )
 
 
-#Imports
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "outputs" / "tables"
 
