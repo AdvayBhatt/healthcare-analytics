@@ -92,3 +92,34 @@
 
 - Resolution:
   Preserved HCPCS codes as strings throughout dashboard ingestion to maintain identifier formatting.
+
+
+  ## Q4: Rural vs Urban Utilization Differences
+
+### Measuring Utilization Differences
+- Challenge:
+  Comparing raw service counts would mostly reflect differences in provider volume and population size rather than utilization behavior.
+
+- Resolution:
+  Normalized service counts by beneficiary volume using services-per-beneficiary rates.
+
+### Small Overall Effect vs Procedure-Level Differences
+- Challenge:
+  Aggregate rural-urban differences were relatively small, which could hide important differences in specific healthcare services.
+
+- Resolution:
+  Performed procedure-level HCPCS analysis to identify where larger utilization gaps were concentrated.
+
+### Multiple Procedure Testing
+- Challenge:
+  Testing 1,497 HCPCS procedures created a high risk of false positives.
+
+- Resolution:
+  Applied Benjamini-Hochberg FDR correction before identifying statistically significant procedures.
+
+### Interpreting Specialized Care Differences
+- Challenge:
+  Oncology, radiation, and infusion-related procedures showed some of the largest rural-urban gaps, but claims data alone cannot determine whether these reflect access barriers, provider availability, referral patterns, or differences in patient need.
+
+- Resolution:
+  Framed findings as differences in observed utilization patterns rather than causal evidence of healthcare access limitations.
