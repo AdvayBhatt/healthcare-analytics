@@ -29,6 +29,20 @@ q3_all_df = pd.read_csv(
     dtype={"HCPCS_Cd": str}
 )
 
+q4a_df = pd.read_csv(
+    OUTPUT_DIR / "q4a_summary.csv"
+)
+
+q4b_df = pd.read_csv(
+    OUTPUT_DIR / "q4b_practically_significant_hcpcs.csv",
+    dtype={"HCPCS_Cd": str}
+)
+
+q4b_all_df = pd.read_csv(
+    OUTPUT_DIR / "q4b_all_tested_hcpcs.csv",
+    dtype={"HCPCS_Cd": str}
+)
+
 #UI Work
 
 st.title("Medicare Payment Analytics Dashboard")
@@ -45,11 +59,12 @@ st.markdown(
 )
 
 
-tab1, tab2, tab3 = st.tabs(
+tab1, tab2, tab3, tab4 = st.tabs(
     [
         "Geographic Variation",
         "Payment Drivers",
-        "Facility vs Office"
+        "Facility vs Office",
+        "Rural Utilization"
     ]
 )
 q1_display = q1_df.rename(columns={
@@ -376,4 +391,164 @@ with tab3:
     using Benjamini-Hochberg false discovery rate correction to account for testing
     multiple HCPCS codes simultaneously.
     """)
-    
+
+with tab4:
+    st.header("Q4: Rural vs Urban Service Utilization Differences")
+
+    st.caption(
+        "HCPCS codes were tested using Mann–Whitney U tests with Benjamini-Hochberg "
+        "FDR correction. Only codes with both statistical significance and a practical "
+        "difference of at least 5% lower rural service rates are shown."
+    )
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric(
+            "HCPCS Codes Tested",
+            len(q4b_all_df)
+        )
+
+    with col2:
+        st.metric(
+            "FDR Significant",
+            int(q4b_all_df["reject"].sum())
+        )
+
+    with col3:
+        st.metric(
+            "Practical Differences",
+            len(q4b_df)
+        )
+
+    with col4:
+        st.metric(
+            "Oncology Related",
+            f"{q4b_df['oncology_related'].sum()} "
+            f"({q4b_df['oncology_related'].mean()*100:.0f}%)"
+        )
+
+    option = st.radio(
+        "Filter procedures:",
+        [
+            "All",
+            "Oncology / infusion related",
+            "Other procedures"
+        ],
+        horizontal=True
+    )
+
+    if option == "Oncology / infusion related":
+        q4_display = q4b_df[
+            q4b_df["oncology_related"]
+        ]
+
+    elif option == "Other procedures":
+        q4_display = q4b_df[
+            ~q4b_df["oncology_related"]
+        ]
+
+    else:
+        q4_display = q4b_df.copy()
+
+    q4_plot = (
+        q4_display
+        .sort_values(
+            "median_percent_difference",
+            ascending=True
+        )
+        .head(15)
+        .copy()
+    )
+
+    # Short labels for visualization
+    q4_plot["Procedure"] = (
+        q4_plot["HCPCS_Desc"]
+        .str.slice(0, 55)
+        + "..."
+    )
+
+    q4_plot["difference_label"] = (
+        q4_plot["median_percent_difference"]
+        .map(lambda x: f"{x:.1f}%")
+    )
+
+    fig_q4 = px.bar(
+        q4_plot,
+        x="median_percent_difference",
+        y="Procedure",
+        orientation="h",
+        title="Largest Rural Service Rate Reductions",
+        labels={
+            "median_percent_difference":
+                "Rural vs Urban Median Difference (%)",
+            "Procedure":
+                "Procedure"
+        },
+        text="difference_label"
+    )
+
+    fig_q4.add_vline(
+        x=0,
+        line_width=2
+    )
+
+    fig_q4.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(
+            range=[
+                0,
+                q4_plot["median_percent_difference"].min() - 10
+            ]
+        ),
+        yaxis=dict(
+            autorange="reversed",
+            automargin=True
+        )
+    )
+
+    st.plotly_chart(
+        fig_q4,
+        use_container_width=True
+    )
+
+    st.subheader("Significant Procedure Differences")
+
+    st.dataframe(
+        q4_display[
+            [
+                "HCPCS_Cd",
+                "HCPCS_Desc",
+                "median_percent_difference",
+                "p_adj"
+            ]
+        ]
+        .sort_values(
+            "median_percent_difference"
+        )
+        .style.format({
+            "median_percent_difference": "{:.1f}%",
+            "p_adj": "{:.2e}"
+        }),
+        hide_index=True,
+        use_container_width=True
+    )
+
+    st.markdown("""
+    ### Key Finding
+
+    Overall rural-urban service-rate differences were modest, with the aggregate
+    difference approximately -1.8%. However, procedure-level analysis revealed
+    substantial variation across specific HCPCS codes.
+
+    Among 1,497 eligible procedures, 127 showed both statistically significant
+    and practically meaningful lower rural service rates after FDR correction.
+    The largest differences were concentrated among specialized services,
+    particularly oncology, radiation, and infusion-related procedures, although
+    meaningful differences were also observed across laboratory, imaging, and
+    other procedure categories.
+
+    These findings indicate that rural-urban differences are concentrated in
+    specific healthcare services rather than uniformly affecting all care.
+    """)
