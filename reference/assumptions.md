@@ -4,7 +4,7 @@
 
 ### Payment Ratio Definition
 - Defined payment ratio as:
-  
+
   Avg_Mdcr_Pymt_Amt / Avg_Sbmtd_Chrg
 
 - This metric measures the fraction of submitted charges reimbursed by Medicare for a given provider-service observation.
@@ -29,6 +29,8 @@
 - Used η² effect size to evaluate practical importance because the large sample size could produce statistically significant results even when state-level differences explained little variation.
 - Used Tukey HSD for pairwise state comparisons after ANOVA.
 - Applied a 0.10 absolute mean difference threshold when identifying practically meaningful state pair differences.
+
+---
 
 ## Q2: Drivers of Medicare Payment Variation
 
@@ -63,6 +65,8 @@ Included:
 - Focused interpretation on coefficient magnitude rather than only statistical significance due to the very large dataset.
 - Standardized Tot_Benes after observing condition number concerns to distinguish scaling issues from true multicollinearity.
 
+---
+
 ## Q3: Facility vs Non-Facility Payment Differences
 
 ### Study Design
@@ -92,34 +96,7 @@ Included:
 - Defined practical significance as a >=5% payment difference.
 - Selected the threshold after observing the distribution of FDR-significant results, where differences below 5% represented small statistical effects while larger differences represented potentially meaningful reimbursement gaps.
 
-# Dashboard and Reporting Assumptions
-
-## Dashboard Architecture
-
-- The Streamlit dashboard does not directly process raw CMS claims data.
-- Analytical transformations and statistical tests are performed in the analysis notebook.
-- The dashboard consumes processed summary tables exported from the analysis pipeline.
-
-### Output Tables
-
-The dashboard depends on the following generated files:
-
-- q1_state_summary.csv
-  - State-level payment ratio summaries used for geographic visualization.
-
-- q2_regression_results.csv
-  - Regression coefficients, confidence intervals, and p-values used for model interpretation.
-
-- q3_all_tested_procedures.csv
-  - Complete HCPCS testing results used to report the statistical testing funnel.
-
-- q3_facility_differences.csv
-  - Filtered procedures meeting practical significance thresholds used for visualization.
-
-### Reproducibility
-
-- Raw CMS data is not included due to file size limitations.
-- The notebook contains the transformation and modeling workflow required to regenerate dashboard outputs.
+---
 
 ## Q4: Rural vs Urban Utilization Differences
 
@@ -147,3 +124,45 @@ The dashboard depends on the following generated files:
 - Lower rural utilization does not necessarily indicate lack of access or unmet medical need.
 - This analysis measures observed paid service utilization, not disease prevalence, patient preferences, referral patterns, or availability of specialists.
 - The findings should be interpreted as identifying areas where rural-urban utilization differences exist, not proving causal barriers to care.
+
+---
+
+# Dashboard and Reporting Assumptions
+
+## Dashboard Architecture
+
+- The Streamlit dashboard does not directly process raw CMS claims data.
+- Analytical transformations and statistical tests are performed in the analysis notebook.
+- The dashboard consumes processed summary tables exported from the analysis pipeline.
+
+### Output Tables
+
+The dashboard depends on the following generated files:
+
+- q1_state_summary.csv
+  - State-level payment ratio summaries used for geographic visualization.
+
+- q2_regression_results.csv
+  - Regression coefficients, confidence intervals, and p-values used for model interpretation.
+
+- q3_all_tested_procedures.csv
+  - Complete HCPCS testing results used to report the statistical testing funnel.
+
+- q3_facility_differences.csv
+  - Filtered procedures meeting practical significance thresholds used for visualization.
+
+- q4a_summary.csv
+  - Aggregate rural-urban utilization comparison results used to report the overall utilization difference.
+
+- q4b_all_tested_hcpcs.csv
+  - Complete HCPCS-level rural-urban utilization testing results, including statistical significance after multiple-comparison correction.
+
+- q4b_practically_significant_hcpcs.csv
+  - HCPCS procedures meeting both FDR significance and practical significance thresholds used for dashboard visualization and filtering.
+
+---
+
+## Reproducibility
+
+- Raw CMS data is not included due to file size limitations.
+- The notebook contains the transformation and modeling workflow required to regenerate dashboard outputs.
